@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "swarmpy"
+version = "0.1.0"
+description = "A Python library for the ftSwarm Python API"
+authors = ["bergschneider <magiclake@gmx.de>"]
+readme = "README.md"
+license = "MIT"
+packages = [
+    { include = "swarm" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
