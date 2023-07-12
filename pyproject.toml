@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "swarmpy"
-version = "0.1.0"
+version = "0.0.0"
 description = "A Python library for the ftSwarm Python API"
 authors = ["bergschneider <magiclake@gmx.de>"]
 readme = "README.md"
@@ -11,7 +11,11 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.11"
+pyserial = "^3.5"
 
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.0"
 
 [build-system]
 requires = ["poetry-core"]
