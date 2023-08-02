@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "swarmpy"
-version = "0.0.0"
+name = "swarm.py"
+version = "1.0.0"
 description = "A Python library for the ftSwarm Python API"
 authors = ["bergschneider <magiclake@gmx.de>"]
 readme = "README.md"
@@ -10,7 +10,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 pyserial = "^3.5"
 
 

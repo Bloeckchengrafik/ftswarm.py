@@ -1,3 +1,4 @@
+import logging
 from enum import IntEnum
 
 
@@ -66,7 +67,7 @@ class FtSwarmBase:
     """Base class for all ftSwarm implementations"""
 
     def __init__(self) -> None:
-        pass
+        self.logger = logging.getLogger("swarm-base")
 
     async def send(self, port_name: str, command: str, *args: str | int | float) -> int:
         pass
@@ -88,6 +89,9 @@ class FtSwarmIO:
 
     async def get_port_name(self) -> str:
         return self._port_name
+
+    async def set_value(self, value: str) -> None:
+        self._swarm.logger.warning(f"Received unexpected write to {self._port_name}: {value}")
 
 
 class FtSwarmActorShim(FtSwarmIO):
@@ -125,6 +129,9 @@ class FtSwarmInput(FtSwarmIO):
         # The last parameter is optional, so we need to check if it is None
         await self._swarm.send(self._port_name, "onTrigger", trigger_event, actor.get_port_name(), *([value] or []))
 
+    async def set_value(self, str_value: str) -> None:
+        self._value = int(str_value)
+
 
 class FtSwarmDigitalInput(FtSwarmInput):
     """
@@ -157,7 +164,6 @@ class FtSwarmDigitalInput(FtSwarmInput):
     async def has_toggled_down(self) -> bool:
         return (await self.get_toggle()) == Toggle.TOGGLEDOWN
 
-# TODO make tests pass
 
 class FtSwarmSwitch(FtSwarmDigitalInput):
     """
@@ -166,7 +172,7 @@ class FtSwarmSwitch(FtSwarmDigitalInput):
     Wiring for fischertechnik switches: 1-3 is normally open, 1-2 is normally closed
     """
 
-    async def get_sensor_type(self):
+    async def get_sensor_type(self) -> Sensor:
         return Sensor.SWITCH
 
 
@@ -177,7 +183,7 @@ class FtSwarmReedSwitch(FtSwarmDigitalInput):
     Maps to ports A1...A4 on all controller types
     """
 
-    async def get_sensor_type(self):
+    async def get_sensor_type(self) -> Sensor:
         return Sensor.REEDSWITCH
 
 
@@ -188,7 +194,7 @@ class FtSwarmLightBarrier(FtSwarmDigitalInput):
     Maps to ports A1...A4 on all controller types
     """
 
-    async def get_sensor_type(self):
+    async def get_sensor_type(self) -> Sensor:
         return Sensor.LIGHTBARRIER
 
 
@@ -199,7 +205,7 @@ class FtSwarmButton(FtSwarmDigitalInput):
     This input is only available on the ftSwarmControl
     """
 
-    async def get_sensor_type(self):
+    async def get_sensor_type(self) -> Sensor:
         return Sensor.BUTTON
 
 
@@ -210,10 +216,10 @@ class FtSwarmAnalogInput(FtSwarmInput):
     Maps to ports A1...A6 on the ftSwarm specifically
     """
 
-    async def get_sensor_type(self):
+    async def get_sensor_type(self) -> Sensor:
         return Sensor.ANALOG
 
-    async def get_value(self):
+    async def get_value(self) -> int:
         return self._value
 
 
@@ -224,11 +230,11 @@ class FtSwarmVoltmeter(FtSwarmAnalogInput):
     Maps to port A2 on the ftSwarm specifically
     """
 
-    async def get_sensor_type(self):
+    async def get_sensor_type(self) -> Sensor:
         return Sensor.VOLTMETER
 
-    async def get_voltage(self):
-        return self._swarm.send(self._port_name, "getVoltage")
+    async def get_voltage(self) -> int:
+        return await self._swarm.send(self._port_name, "getVoltage")
 
 
 class FtSwarmOhmmeter(FtSwarmAnalogInput):
@@ -238,11 +244,11 @@ class FtSwarmOhmmeter(FtSwarmAnalogInput):
     Maps to ports A1...A6 on the ftSwarm specifically
     """
 
-    async def get_sensor_type(self):
+    async def get_sensor_type(self) -> Sensor:
         return Sensor.OHMMETER
 
-    async def get_resistance(self):
-        return self._swarm.send(self._port_name, "getReststance")
+    async def get_resistance(self) -> int:
+        return await self._swarm.send(self._port_name, "getResistance")
 
 
 class FtSwarmThermometer(FtSwarmAnalogInput):
@@ -252,16 +258,16 @@ class FtSwarmThermometer(FtSwarmAnalogInput):
     Maps to ports A1...A6 on the ftSwarm specifically
     """
 
-    async def get_sensor_type(self):
+    async def get_sensor_type(self) -> Sensor:
         return Sensor.THERMOMETER
 
-    async def get_celcius(self):
+    async def get_celcius(self) -> int:
         return await self._swarm.send(self._port_name, "getCelcius")
 
-    async def get_kelvin(self):
+    async def get_kelvin(self) -> int:
         return await self._swarm.send(self._port_name, "getKelvin")
 
-    async def get_fahrenheit(self):
+    async def get_fahrenheit(self) -> int:
         return await self._swarm.send(self._port_name, "getFahrenheit")
 
 
@@ -273,7 +279,7 @@ class FtSwarmLDR(FtSwarmAnalogInput):
     At FtSwarmControl you could use a LDR with a FtSwarmDigitalInput as well
     """
 
-    async def get_sensor_type(self):
+    async def get_sensor_type(self) -> Sensor:
         return Sensor.LDR
 
 
@@ -285,9 +291,9 @@ class FtSwarmActor(FtSwarmIO):
     """
 
     async def post_init(self) -> None:
-        self._swarm.send(self._port_name, "setActorType", self.get_actor_type())
+        await self._swarm.send(self._port_name, "setActorType", await self.get_actor_type())
 
-    async def get_actor_type(self) -> int:
+    async def get_actor_type(self) -> Actor:
         return Actor.UNDEFINDED
 
 
@@ -298,13 +304,13 @@ class FtSwarmMotor(FtSwarmActor):
     M1..M2 all contollers - keep power budget in mind!
     """
 
-    async def get_actor_type(self):
+    async def get_actor_type(self) -> Actor:
         return Actor.XMOTOR
 
-    async def set_speed(self, speed):
+    async def set_speed(self, speed) -> None:
         await self._swarm.send(self._port_name, "setSpeed", speed)
 
-    async def get_speed(self):
+    async def get_speed(self) -> int:
         return await self._swarm.send(self._port_name, "getSpeed")
 
 
@@ -315,10 +321,10 @@ class FtSwarmTractorMotor(FtSwarmMotor):
     M1..M2 all contollers - keep power budget in mind!
     """
 
-    async def get_actor_type(self):
+    async def get_actor_type(self) -> Actor:
         return Actor.TRACTOR
 
-    async def set_motion_type(self, motion_type):
+    async def set_motion_type(self, motion_type) -> None:
         """
         Set motion type of motor
         FtSwarmTractor has different options for stopping motor:
@@ -327,14 +333,17 @@ class FtSwarmTractorMotor(FtSwarmMotor):
         """
         await self._swarm.send(self._port_name, "setMotionType", motion_type)
 
-    async def get_motion_type(self):
-        return self._swarm.send(self._port_name, "getMotionType")
+    async def get_motion_type(self) -> MotionType:
+        return MotionType(await self._swarm.send(self._port_name, "getMotionType"))
 
-    async def coast(self):
+    async def coast(self) -> None:
         await self.set_motion_type(MotionType.COAST)
 
-    async def brake(self):
+    async def brake(self) -> None:
         await self.set_motion_type(MotionType.BRAKE)
+
+    async def run(self) -> None:
+        await self.set_motion_type(MotionType.ON)
 
 
 class FtSwarmXMMotor(FtSwarmTractorMotor):
@@ -344,8 +353,8 @@ class FtSwarmXMMotor(FtSwarmTractorMotor):
     M1...M2 all contollers - keep power budget in mind!
     """
 
-    def __init__(self, name):
-        super().__init__(name, Actor.XMMOTOR)
+    async def get_actor_type(self) -> Actor:
+        return Actor.XMMOTOR
 
 
 # TODO: implement encoder input
@@ -356,7 +365,7 @@ class FtSwarmEncoderMotor(FtSwarmTractorMotor):
     M1...M2 all contollers - keep power budget in mind!
     """
 
-    async def get_actor_type(self):
+    async def get_actor_type(self) -> Actor:
         return Actor.ENCODER
 
 
@@ -367,14 +376,14 @@ class FtSwarmLamp(FtSwarmActor):
     M1...M2 all contollers - keep power budget in mind!
     """
 
-    async def get_actor_type(self):
+    async def get_actor_type(self) -> Actor:
         return Actor.LAMP
 
-    async def on(self, power=255):
-        self._swarm.send(self._port_name, "setSpeed", power)
+    async def on(self, power=255) -> None:
+        await self._swarm.send(self._port_name, "setSpeed", power)
 
-    async def off(self):
-        self._swarm.send(self._port_name, "setSpeed", 0)
+    async def off(self) -> None:
+        await self._swarm.send(self._port_name, "setSpeed", 0)
 
 
 class FtSwarmBinaryActor(FtSwarmActor):
@@ -384,11 +393,11 @@ class FtSwarmBinaryActor(FtSwarmActor):
     Don't use this class directly, use one of the derived classes instead
     """
 
-    async def on(self):
-        self._swarm.send(self._port_name, "setSpeed", 255)
+    async def on(self) -> None:
+        await self._swarm.send(self._port_name, "setSpeed", 255)
 
-    async def off(self):
-        self._swarm.send(self._port_name, "setSpeed", 0)
+    async def off(self) -> None:
+        await self._swarm.send(self._port_name, "setSpeed", 0)
 
 
 class FtSwarmValve(FtSwarmBinaryActor):
@@ -398,7 +407,7 @@ class FtSwarmValve(FtSwarmBinaryActor):
     M1...M2 all contollers - keep power budget in mind!
     """
 
-    async def get_actor_type(self):
+    async def get_actor_type(self) -> Actor:
         return Actor.VALVE
 
 
@@ -409,7 +418,7 @@ class FtSwarmCompressor(FtSwarmBinaryActor):
     M1...M2 all contollers - keep power budget in mind!
     """
 
-    async def get_actor_type(self):
+    async def get_actor_type(self) -> Actor:
         return Actor.COMPRESSOR
 
 
@@ -420,7 +429,7 @@ class FtSwarmBuzzer(FtSwarmBinaryActor):
     M1...M2 all contollers - keep power budget in mind!
     """
 
-    async def get_actor_type(self):
+    async def get_actor_type(self) -> Actor:
         return Actor.BUZZER
 
 
@@ -433,28 +442,28 @@ class FtSwarmServo(FtSwarmIO):
     A servo has 150mA typically, higher values with load. Keep power budget in mind!
     """
 
-    def __init__(self, swarm, port_name):
+    def __init__(self, swarm, port_name) -> None:
         super().__init__(swarm, port_name)
         self._position = 0
         self._offset = 0
 
-    async def post_init(self):
+    async def post_init(self) -> None:
         self._offset = self._swarm.send(self._port_name, "getOffset")
         self._position = self._swarm.send(self._port_name, "getPositon")
 
-    async def get_position(self):
+    async def get_position(self) -> int:
         return self._position
 
-    async def set_position(self, position):
+    async def set_position(self, position) -> None:
         self._position = position
-        self._swarm.send(self._port_name, "setPosition", position)
+        await self._swarm.send(self._port_name, "setPosition", position)
 
-    async def get_offset(self):
+    async def get_offset(self) -> int:
         return self._offset
 
-    async def set_offset(self, offset):
+    async def set_offset(self, offset) -> None:
         self._offset = offset
-        self._swarm.send(self._port_name, "setOffset", offset)
+        await self._swarm.send(self._port_name, "setOffset", offset)
 
 
 class FtSwarmJoystick(FtSwarmIO):
@@ -464,26 +473,26 @@ class FtSwarmJoystick(FtSwarmIO):
     ftSwarmControl only
     """
 
-    def __init__(self, swarm, port_name, hysteresis):
+    def __init__(self, swarm, port_name, hysteresis) -> None:
         super().__init__(swarm, port_name)
         self._lr = 0
         self._fb = 0
         self._hysteresis = hysteresis
 
-    async def post_init(self):
-        self._swarm.send(self._port_name, "subscribe", self._hysteresis)
+    async def post_init(self) -> None:
+        await self._swarm.send(self._port_name, "subscribe", self._hysteresis)
 
-    async def get_fb(self):
+    async def get_fb(self) -> int:
         return self._fb
 
-    async def get_lr(self):
+    async def get_lr(self) -> int:
         return self._lr
 
-    async def on_trigger_lr(self, trigger_event, actor, p1=None):
-        self._swarm.send(self._port_name, "onTriggerLR", trigger_event, actor, *(p1 or []))
+    async def on_trigger_lr(self, trigger_event, actor, p1=None) -> None:
+        await self._swarm.send(self._port_name, "onTriggerLR", trigger_event, actor, *(p1 or []))
 
-    async def on_trigger_fb(self, trigger_event, actor, p1=None):
-        self._swarm.send(self._port_name, "onTriggerFB", trigger_event, actor, *(p1 or []))
+    async def on_trigger_fb(self, trigger_event, actor, p1=None) -> None:
+        await self._swarm.send(self._port_name, "onTriggerFB", trigger_event, actor, *(p1 or []))
 
 
 class FtSwarmPixel(FtSwarmIO):
@@ -494,32 +503,32 @@ class FtSwarmPixel(FtSwarmIO):
     One LED takes up to 60mA, keep power budget in mind!
     """
 
-    def __init__(self, swarm, port_name):
+    def __init__(self, swarm, port_name) -> None:
         super().__init__(swarm, port_name)
         self._brightness = 0
         self._color = 0
 
-    async def post_init(self):
-        self._brightness = self._swarm.send(self._port_name, "getBrightness")
-        self._color = self._swarm.send(self._port_name, "getColor")
+    async def post_init(self) -> None:
+        self._brightness = await self._swarm.send(self._port_name, "getBrightness")
+        self._color = await self._swarm.send(self._port_name, "getColor")
 
-    async def get_brightness(self):
+    async def get_brightness(self) -> int:
         """
         Get the brightness of the LED
         :return:  brightness 0..255
         """
         return self._brightness
 
-    async def set_brightness(self, brightness):
+    async def set_brightness(self, brightness) -> None:
         self._brightness = brightness
-        self._swarm.send(self._port_name, "setBrightness", brightness)
+        await self._swarm.send(self._port_name, "setBrightness", brightness)
 
-    async def get_color(self):
+    async def get_color(self) -> int:
         return self._color
 
-    async def set_color(self, color):
+    async def set_color(self, color) -> None:
         self._color = color
-        self._swarm.send(self._port_name, "setColor", color)
+        await self._swarm.send(self._port_name, "setColor", color)
 
 
 class FtSwarmI2C(FtSwarmIO):
@@ -527,21 +536,21 @@ class FtSwarmI2C(FtSwarmIO):
     I2C slave with 4 registers
     """
 
-    def __init__(self, swarm, port_name):
+    def __init__(self, swarm, port_name) -> None:
         super().__init__(swarm, port_name)
         self.__register = [0, 0, 0, 0, 0, 0, 0, 0]
 
-    async def post_init(self):
+    async def post_init(self) -> None:
         for i in range(8):
-            self.__register[i] = self._swarm.send(self._port_name, "getRegister", i)
-        self._swarm.send(self._port_name, "subscribe")
+            self.__register[i] = await self._swarm.send(self._port_name, "getRegister", i)
+        await self._swarm.send(self._port_name, "subscribe")
 
-    async def get_register(self, reg):
+    async def get_register(self, reg) -> int:
         return self.__register[reg]
 
-    async def set_register(self, reg, value):
+    async def set_register(self, reg, value) -> None:
         self.__register[reg] = value
-        self._swarm.send(self._port_name, "setRegister", reg, value)
+        await self._swarm.send(self._port_name, "setRegister", reg, value)
 
-    async def on_trigger(self, trigger_event, actor, p1):
-        self._swarm.send(self._port_name, "onTrigger", trigger_event, actor.get_port_name(), p1)
+    async def on_trigger(self, trigger_event, actor, p1) -> None:
+        await self._swarm.send(self._port_name, "onTrigger", trigger_event, actor.get_port_name(), p1)
