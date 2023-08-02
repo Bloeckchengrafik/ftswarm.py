@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "swarmpy"
-version = "0.1.0"
+name = "ftswarm.py"
+version = "1.0.0"
 description = "A Python library for the ftSwarm Python API"
 authors = ["bergschneider <magiclake@gmx.de>"]
 readme = "README.md"
@@ -10,8 +10,16 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
+pyserial = "^3.5"
 
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.0"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.5.2"
+mkdocs-material = "^7.3.2"
+pdoc3 = "^0.9.2"
 
 [build-system]
 requires = ["poetry-core"]
