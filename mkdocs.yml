@@ -1,6 +1,6 @@
 site_name: ftSwarm.py - Help and Reference
 copyright: "&copy; Christian Bergschneider & Stefan Fuss"
-site_url: https://ftswarm-py.bloeckchengrafik.de
+site_url: https://bloeckchengrafik.de/ftswarm.py
 
 theme:
   name: material
@@ -8,5 +8,5 @@ theme:
 nav:
   - Introduction: 'index.md'
   - 'quickstart.md'
-  - Reference: '/reference'
+  - Reference: '/ftswarm.py/reference/swarm.html'
   - 'Issue Tracker': 'https://github.com/Bloeckchengrafik/ftswarm.py'
