@@ -1,9 +1,11 @@
 [tool.poetry]
 name = "ftswarm.py"
-version = "1.0.0"
+version = "1.1.0"
 description = "A Python library for the ftSwarm Python API"
 authors = ["bergschneider <magiclake@gmx.de>"]
 readme = "README.md"
+documentation = "https://bloeckchengrafik.de/ftswarm.py/"
+
 license = "MIT"
 packages = [
     { include = "swarm" },
