@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from swarm.swarm import *
 
 from .serialhandler import SerialHandler
@@ -98,20 +97,20 @@ class FtSwarm(FtSwarmBase):
     async def get_ldr(self, port_name: str) -> FtSwarmLDR:
         return await self._get_object(port_name, FtSwarmLDR)
 
-    async def get_motor(self, port_name: str) -> FtSwarmMotor:
-        return await self._get_object(port_name, FtSwarmMotor)
+    async def get_motor(self, port_name: str, high_precision: bool = False) -> FtSwarmMotor:
+        return await self._get_object(port_name, FtSwarmMotor, high_precision)
 
-    async def get_tractor_motor(self, port_name: str) -> FtSwarmTractorMotor:
-        return await self._get_object(port_name, FtSwarmTractorMotor)
+    async def get_tractor_motor(self, port_name: str, high_precision: bool = False) -> FtSwarmTractorMotor:
+        return await self._get_object(port_name, FtSwarmTractorMotor, high_precision)
 
-    async def get_xm_motor(self, port_name: str) -> FtSwarmXMMotor:
-        return await self._get_object(port_name, FtSwarmXMMotor)
+    async def get_xm_motor(self, port_name: str, high_precision: bool = False) -> FtSwarmXMMotor:
+        return await self._get_object(port_name, FtSwarmXMMotor, high_precision)
 
-    async def get_encoder_motor(self, port_name: str) -> FtSwarmEncoderMotor:
-        return await self._get_object(port_name, FtSwarmEncoderMotor)
+    async def get_encoder_motor(self, port_name: str, high_precision: bool = False) -> FtSwarmEncoderMotor:
+        return await self._get_object(port_name, FtSwarmEncoderMotor, high_precision)
 
-    async def get_lamp(self, port_name: str) -> FtSwarmLamp:
-        return await self._get_object(port_name, FtSwarmLamp)
+    async def get_lamp(self, port_name: str, high_precision: bool = False) -> FtSwarmLamp:
+        return await self._get_object(port_name, FtSwarmLamp, high_precision)
 
     async def get_valve(self, port_name: str) -> FtSwarmValve:
         return await self._get_object(port_name, FtSwarmValve)
