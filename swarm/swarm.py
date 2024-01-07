@@ -290,8 +290,12 @@ class FtSwarmActor(FtSwarmIO):
     Don't use this class directly, use one of the derived classes instead
     """
 
+    def __init__(self, swarm: FtSwarmBase, port_name: str, high_precision: bool = False) -> None:
+        super().__init__(swarm, port_name)
+        self._high_precision = high_precision
+
     async def post_init(self) -> None:
-        await self._swarm.send(self._port_name, "setActorType", await self.get_actor_type())
+        await self._swarm.send(self._port_name, "setActorType", await self.get_actor_type(), self._high_precision)
 
     async def get_actor_type(self) -> Actor:
         return Actor.UNDEFINDED
