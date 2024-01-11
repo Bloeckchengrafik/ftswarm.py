@@ -531,6 +531,9 @@ class FtSwarmPixel(FtSwarmIO):
         return self._color
 
     async def set_color(self, color) -> None:
+        # If color is a tuple, reformat it as hex
+        if isinstance(color, tuple) or isinstance(color, list):
+            color = (color[0] << 16) + (color[1] << 8) + color[2]
         self._color = color
         await self._swarm.send(self._port_name, "setColor", color)
 
