@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ftswarm.py"
-version = "1.1.0"
+version = "1.2.0"
 description = "A Python library for the ftSwarm Python API"
 authors = ["bergschneider <magiclake@gmx.de>"]
 readme = "README.md"
