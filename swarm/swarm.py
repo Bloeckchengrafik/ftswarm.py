@@ -69,7 +69,7 @@ class FtSwarmBase:
     def __init__(self) -> None:
         self.logger = logging.getLogger("swarm-base")
 
-    async def send(self, port_name: str, command: str, *args: str | int | float) -> int:
+    async def send(self, port_name: str, command: str, *args: str | int | float) -> int | str | None:
         pass
 
 
@@ -121,6 +121,7 @@ class FtSwarmInput(FtSwarmIO):
     async def post_init(self) -> None:
         await self._swarm.send(self._port_name, "setSensorType", await self.get_sensor_type(), self._normallyOpen)
         await self._swarm.send(self._port_name, "subscribe", self._hysteresis)
+        self._value = await self._swarm.send(self._port_name, "getValue")
 
     async def get_sensor_type(self) -> Sensor:
         return Sensor.UNDEFINED
